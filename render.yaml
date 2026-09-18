@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: culinaos-api
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: python -m gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DJANGO_ENV
+        value: production
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: ""
+      - key: TIME_ZONE
+        value: Asia/Dhaka
+      - key: CRON_SECRET
+        generateValue: true

@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: culinaos
+      POSTGRES_USER: culinaos
+      POSTGRES_PASSWORD: culinaos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U culinaos -d culinaos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    command: sh -c "python manage.py migrate --noinput && python manage.py seed_demo && python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DB_NAME: culinaos
+      DB_USER: culinaos
+      DB_PASSWORD: culinaos
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: "local-demo-change-before-production"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  inventory-worker:
+    build: .
+    command: sh -c "python manage.py migrate --noinput && python manage.py run_inventory_alerts --loop --interval 3600"
+    volumes:
+      - .:/app
+    environment:
+      DB_NAME: culinaos
+      DB_USER: culinaos
+      DB_PASSWORD: culinaos
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_DEBUG: "0"
+      DJANGO_SECRET_KEY: "local-demo-change-before-production"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
